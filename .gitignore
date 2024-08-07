@@ -1,0 +1,5 @@
+differentiable_illum/*
+data/*
+__pycache__/*
+*.pyc
+.vscode/*
