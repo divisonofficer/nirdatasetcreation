@@ -1,5 +1,25 @@
+from matplotlib import axes
 import numpy as np
 import matplotlib.pyplot as plt
+
+
+class TensorDictVisualizer:
+    def __init__(self, tensor_dict):
+        self.tensor_dict = tensor_dict
+
+    def plot(self):
+        num_tensors = len(self.tensor_dict)
+        fig, axes = plt.subplots((num_tensors + 3) // 4, 4, figsize=(15, 10))
+        for i, (key, tensor) in enumerate(self.tensor_dict.items()):
+            col = i % 4
+            row = i // 4
+            axes[row][col].imshow(tensor)
+            axes[row][col].set_title(key)
+            axes[row][col].axis("off")
+            fig.colorbar(
+                axes[row][col].imshow(tensor), ax=axes[row][col], orientation="vertical"
+            )
+        plt.show()
 
 
 class TensorVisualizer:
@@ -9,7 +29,7 @@ class TensorVisualizer:
         self.height = tensor.shape[1]
         self.channels = tensor.shape[2] if len(tensor.shape) > 2 else 1
 
-    def plot(self):
+    def plot_normalmap(self):
         # normalmap을 시각화하기 위해 -1에서 1의 범위를 0에서 1로 변환합니다.
         normalmap = self.tensor
         # 각 채널을 분리합니다.
@@ -17,7 +37,7 @@ class TensorVisualizer:
         g_channel = normalmap[:, :, 1]
         b_channel = normalmap[:, :, 2]
 
-        # matplotlib를 사용하여 각 채널을 시각화합니다.
+        # matplotlib를 사용하여 각 채널을 시각화합니다.1
         fig, axes = plt.subplots(1, 3, figsize=(25, 10))
 
         # Red 채널

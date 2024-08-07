@@ -39,12 +39,14 @@ class RenderOption:
     def __init__(
         self,
         light_alpha: float = 0.99,
-        ambient_alpha: float = 0.2,
+        ambient_alpha: float = 0.1,
         reflectance_alpha: float = 0.7,
+        parallel_normal: bool = False,
     ):
         self.light_alpha = light_alpha
         self.ambient_alpha = ambient_alpha
         self.reflectance_alpha = reflectance_alpha
+        self.parallel_normal = parallel_normal
 
 
 class Renderer2:
@@ -70,9 +72,11 @@ class Renderer2:
         point_cloud = self.disp_normal.disp_to_pointcloud(
             input.image_disp, input.calibration_cam, input.baseline
         )
-
-        normal_map = self.disp_normal.pointcloud_to_normal(point_cloud)
-
+        if self.option.parallel_normal:
+            normal_map = torch.zeros_like(point_cloud).float()
+            normal_map[..., :] = torch.tensor([0.0, 0.0, -1.0])
+        else:
+            normal_map = self.disp_normal.pointcloud_to_normal(point_cloud)
         # Compute Projection Vector
 
         projection_vector = input.projection.location - point_cloud
@@ -99,14 +103,15 @@ class Renderer2:
 
         rendered_image = (rendered_image.cpu().numpy() * 255).astype(np.uint8)
 
-        # TensorVisualizer(normal_map.cpu().numpy()).plot()
-        # cv2.imshow("disparity", input.image_disp.cpu().numpy().astype(np.uint8))
-        cv2.imshow("Projected Vector", projection_vector.cpu().numpy())
-        cv2.imshow("Rendered Image", rendered_image)
+        metric = {
+            "shading_term": shading_term,
+            "normal_map": normal_map,
+            "projection_vector": projection_vector,
+            "lambertian_reflectance": lambertian_reflectance,
+            "ambient": ambient,
+            "reflectance": reflectance,
+            "rendered_image": rendered_image,
+            "light": light,
+        }
 
-        cv2.imshow("Normal Map", normal_map.cpu().numpy())
-        cv2.imshow("Nir Image", input.image_nir.cpu().numpy())
-        cv2.imshow("lambda", lambertian_reflectance.cpu().numpy())
-        cv2.waitKey(0)
-
-        return rendered_image
+        return rendered_image, metric
