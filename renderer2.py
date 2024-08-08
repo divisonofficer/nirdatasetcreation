@@ -42,11 +42,13 @@ class RenderOption:
         ambient_alpha: float = 0.1,
         reflectance_alpha: float = 0.7,
         parallel_normal: bool = False,
+        binete_ratio: float = 0.5,
     ):
         self.light_alpha = light_alpha
         self.ambient_alpha = ambient_alpha
         self.reflectance_alpha = reflectance_alpha
         self.parallel_normal = parallel_normal
+        self.binete_ratio = binete_ratio
 
 
 class Renderer2:
@@ -67,7 +69,25 @@ class Renderer2:
             * self.option.light_alpha
         )
 
+    def binete_light(self, light, radius):
+        height, width = light.shape
+
+        # 중심점 계산
+        center_x, center_y = width / 2, height / 2
+
+        # 거리 맵 생성
+        y, x = torch.meshgrid(torch.arange(height), torch.arange(width))
+        distance_map = torch.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
+
+        # 마스크 생성
+        mask = torch.clamp(1 - (distance_map / radius), min=0.0, max=1.0)
+
+        return light * mask
+
     def render_image(self, input: RenderInput):
+        """
+        Input: RenderInput - Image_NIR, DISP, Material_Index, Calibration, Baseline, Light Position
+        """
         # Compute Normal Map
         point_cloud = self.disp_normal.disp_to_pointcloud(
             input.image_disp, input.calibration_cam, input.baseline
@@ -91,6 +111,14 @@ class Renderer2:
             reflectance = torch.ones_like(input.image_nir)
 
         light = self.light_propagation(input.projection.location, point_cloud)
+
+        binete_radius = (
+            min(input.image_nir.shape[0], input.image_nir.shape[1])
+            * self.option.binete_ratio
+        )
+
+        light = self.binete_light(light, binete_radius)
+
         lambertian_reflectance = reflectance * shading_term * light
         ambient = input.image_nir
 
@@ -101,7 +129,7 @@ class Renderer2:
             + ambient * self.option.ambient_alpha
         )
 
-        rendered_image = (rendered_image.cpu().numpy() * 255).astype(np.uint8)
+        rendered_image = rendered_image.clamp(min=0, max=1)
 
         metric = {
             "shading_term": shading_term,
