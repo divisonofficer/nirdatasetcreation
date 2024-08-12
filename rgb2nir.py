@@ -7,6 +7,7 @@ import tqdm
 from dataload.entry import Entry
 
 from dataload.read_flyingthings3d import Flying3dDataset
+from dataload.read_flow3d_flyingthings3d import Flow3dFlying3dDataset
 import torch
 
 
@@ -164,16 +165,17 @@ class RGB2NIR:
 
 if __name__ == "__main__":
     # Load the image
-    dataset = Flying3dDataset(root="/bean/flow3d", search_paths=False)
+    # dataset = Flying3dDataset(root="/bean/flow3d", search_paths=False)
+    dataset = Flow3dFlying3dDataset(root="/bean/flyingthings3d", search_paths=False)
     # Create an instance of the class
     rgb2nir = RGB2NIR()
 
     # Transform the image
-    # input = dataset[0]
+    #
 
     rgb2nir.process_dataset(dataset)
-
-    # (left, _), (right, _) = rgb2nir.process_data(input)
+    # input = dataset[0]
+    # (nir, left, _), (nir2, right, _) = rgb2nir.process_data(input)
     # cv2.imshow("Left", left.cpu().numpy())
     # cv2.imshow("Right", right.cpu().numpy())
 

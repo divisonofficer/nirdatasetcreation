@@ -111,13 +111,13 @@ class Renderer2:
             reflectance = torch.ones_like(input.image_nir)
 
         light = self.light_propagation(input.projection.location, point_cloud)
+        if self.option.binete_ratio > 0:
+            binete_radius = (
+                min(input.image_nir.shape[0], input.image_nir.shape[1])
+                * self.option.binete_ratio
+            )
 
-        binete_radius = (
-            min(input.image_nir.shape[0], input.image_nir.shape[1])
-            * self.option.binete_ratio
-        )
-
-        light = self.binete_light(light, binete_radius)
+            light = self.binete_light(light, binete_radius)
 
         lambertian_reflectance = reflectance * shading_term * light
         ambient = input.image_nir
